@@ -3,11 +3,14 @@ import PropTypes from 'prop-types';
 import styled from '@emotion/styled/macro';
 
 class StoryTransformer extends React.PureComponent {
-  state = { index: null };
+  constructor(props) {
+    super(props);
 
-  componentDidMount() {
     this.initialize();
+    this.state = { index: this.index };
   }
+
+  componentDidMount() {}
   componentDidUpdate() {}
   render() {
     const { index, processing } = this.state;
@@ -17,29 +20,54 @@ class StoryTransformer extends React.PureComponent {
           processing={processing}
           onTransitionEnd={this.handleTransitionEnd}
         >
-          {processing === 'previous' && (
-            <PreviousCard>{this.renderChild(index - 1)}</PreviousCard>
-          )}
-          <CurrentCard>
-            {this.renderChild(index)}
-            {index > 0 && <ClickableLeft onClick={() => this.goTo(-1)} />}
-            {index + 1 < this.props.list.length && (
-              <ClickableRight onClick={() => this.goTo(1)} />
-            )}
-          </CurrentCard>
-          {processing === 'next' && (
-            <NextCard>{this.renderChild(index + 1)}</NextCard>
-          )}
+          {this.renderCard('current', index)}
+          {this.renderTransitionCard(processing, index)}
         </Container>
       </Scene>
     );
   }
 
-  renderChild(idx) {
-    const { list } = this.props;
+  renderCard(type, idx) {
+    const Wrapper =
+      type === 'previous'
+        ? PreviousCard
+        : type === 'next'
+        ? NextCard
+        : type === 'current'
+        ? CurrentCard
+        : null;
+
+    if (Wrapper == null) return null;
+
     return (
-      <ChildWrapper>{this.props.render(list[idx], idx, list)}</ChildWrapper>
+      <Wrapper key={idx}>
+        <CardMedia>
+          {this.renderMedia(idx)}
+          {idx > 0 && <ClickableLeft onClick={() => this.goTo(-1)} />}
+          {idx + 1 < this.props.list.length && (
+            <ClickableRight onClick={() => this.goTo(1)} />
+          )}
+        </CardMedia>
+        <CardCover>{this.renderCover(idx)}</CardCover>
+      </Wrapper>
     );
+  }
+
+  renderTransitionCard(processing, idx) {
+    if (processing == null) return null;
+
+    const index = processing === 'previous' ? idx - 1 : idx + 1;
+    return this.renderCard(processing, index);
+  }
+
+  renderMedia(idx) {
+    const { list } = this.props;
+    return this.props.renderMedia(list[idx], idx, list);
+  }
+
+  renderCover(idx) {
+    const { list } = this.props;
+    return this.props.renderCover(list[idx], idx, list);
   }
 
   initialize() {
@@ -48,7 +76,6 @@ class StoryTransformer extends React.PureComponent {
 
     if (idx !== -1) {
       this.index = idx;
-      this.setState({ index: this.index });
     }
   }
 
@@ -90,23 +117,28 @@ class StoryTransformer extends React.PureComponent {
 
   handleTransitionEnd = () => {
     this.setState({ index: this.index, processing: null });
+    this.props.onChanged(this.index);
   };
 }
 
 StoryTransformer.propTypes = {
   list: PropTypes.arrayOf(PropTypes.string),
-  render: PropTypes.func
+  renderMedia: PropTypes.func,
+  renderCover: PropTypes.func,
+  onChanged: PropTypes.func
 };
 
 StoryTransformer.defaultProps = {
   list: [],
-  render: () => null
+  renderMedia: () => null,
+  renderCover: () => null,
+  onChanged: () => null
 };
 
 const Scene = styled.div`
   width: 100%;
   height: 100%;
-  perspective: 200vw;
+  perspective: 1000px;
   perspective-origin: 50% 50%;
 `;
 
@@ -150,12 +182,30 @@ const PreviousCard = styled(Card)`
   transform-origin: center left;
 `;
 
-const Clickable = styled.div`
+const CardMedia = styled.div`
+  width: 100%;
+  height: 100%;
+`;
+
+const CardCover = styled.div`
   position: absolute;
   top: 0;
   bottom: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+`;
+
+const Clickable = styled.button`
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
   height: 100%;
   background: none;
+  outline: 0;
 `;
 const ClickableLeft = styled(Clickable)`
   left: 0;
@@ -168,11 +218,6 @@ const ClickableLeft = styled(Clickable)`
 const ClickableRight = styled(Clickable)`
   right: 0;
   width: 75%;
-`;
-
-const ChildWrapper = styled.div`
-  width: 100%;
-  height: 100%;
 `;
 
 export default StoryTransformer;

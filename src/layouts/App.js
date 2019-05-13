@@ -27,19 +27,45 @@ const VIDEO_LIST = [
   'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4'
 ];
 
+class CoverTest extends React.PureComponent {
+  componentDidMount() {
+    console.log('didmount @CoverTest');
+  }
+
+  render() {
+    return this.props.children;
+  }
+}
+
 function renderChar(char) {
-  return <div className="App-character">{char}</div>;
+  return (
+    <CoverTest>
+      <div className="App-character">{char}</div>;
+    </CoverTest>
+  );
+}
+
+class MediaTest extends React.PureComponent {
+  componentDidMount() {
+    console.log('didmount @MediaTest');
+  }
+
+  render() {
+    return this.props.children;
+  }
 }
 
 function renderVideo(url) {
   return (
-    <video
-      className="App-video"
-      style={{ width: '100%', height: '100%' }}
-      src={url}
-      autoPlay
-      muted
-    />
+    <MediaTest>
+      <video
+        className="App-video"
+        style={{ width: '100%', height: '100%' }}
+        src={url}
+        autoPlay
+        muted
+      />
+    </MediaTest>
   );
 }
 
@@ -50,7 +76,8 @@ function App() {
         <StoryTransformer
           id={VIDEO_LIST[0]}
           list={VIDEO_LIST}
-          render={renderVideo}
+          renderCover={renderChar}
+          renderMedia={renderVideo}
         />
       </header>
     </div>
