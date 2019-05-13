@@ -45,3 +45,9 @@
   font-size: 3em;
   box-sizing: border-box;
 }
+
+.App-video {
+  width: 100%;
+  height: 100%;
+  background-color: #fff;
+}

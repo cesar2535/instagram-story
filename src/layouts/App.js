@@ -32,7 +32,15 @@ function renderChar(char) {
 }
 
 function renderVideo(url) {
-  return <video style={{ width: '100%', height: '100%' }} src={url} autoPlay />;
+  return (
+    <video
+      className="App-video"
+      style={{ width: '100%', height: '100%' }}
+      src={url}
+      autoPlay
+      muted
+    />
+  );
 }
 
 function App() {
