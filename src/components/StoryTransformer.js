@@ -81,12 +81,14 @@ class StoryTransformer extends React.PureComponent {
 
   renderMedia(idx) {
     const { list } = this.props;
-    return this.props.renderMedia(list[idx], idx, list);
+    const id = list.length > 0 ? list[idx] : this.props.id
+    return this.props.renderMedia(id, idx, list);
   }
 
   renderCover(idx) {
     const { list } = this.props;
-    return this.props.renderCover(list[idx], idx, list);
+    const id = list.length > 0 ? list[idx] : this.props.id
+    return this.props.renderCover(id, idx, list);
   }
 
   initialize() {
