@@ -28,9 +28,7 @@ const VIDEO_LIST = [
 ];
 
 class CoverTest extends React.PureComponent {
-  componentDidMount() {
-    console.log('didmount @CoverTest');
-  }
+  componentDidMount() {}
 
   render() {
     return this.props.children;
@@ -46,9 +44,7 @@ function renderChar(char) {
 }
 
 class MediaTest extends React.PureComponent {
-  componentDidMount() {
-    console.log('didmount @MediaTest');
-  }
+  componentDidMount() {}
 
   render() {
     return this.props.children;
