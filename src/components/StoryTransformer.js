@@ -29,12 +29,14 @@ class StoryTransformer extends React.PureComponent {
   }
 
   renderCard(type, idx) {
-    const isClickable = type === 'current'
+    const isClickable = type === 'current';
     return (
-      <Card key={idx} transform={type}>
+      <Card key={idx} processing={type}>
         <CardMedia>
           {this.renderMedia(idx)}
-          {isClickable && idx > 0 && <ClickableLeft onClick={() => this.goTo(-1)} />}
+          {isClickable && idx > 0 && (
+            <ClickableLeft onClick={() => this.goTo(-1)} />
+          )}
           {isClickable && idx + 1 < this.props.list.length && (
             <ClickableRight onClick={() => this.goTo(1)} />
           )}
@@ -161,10 +163,10 @@ const Card = styled.div`
   height: 100%;
   backface-visibility: hidden;
 
-  ${({ transform }) =>
-    transform === 'next'
+  ${({ processing }) =>
+    processing === 'next'
       ? next
-      : transform === 'previous'
+      : processing === 'previous'
       ? previous
       : current};
 `;
@@ -211,7 +213,7 @@ const ClickableLeft = styled(Clickable)`
   width: 25%;
 
   &:active {
-    background: linear-gradient(to right, #000, rgba(0, 0, 0, 0));
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0) 75%);
   }
 `;
 const ClickableRight = styled(Clickable)`
