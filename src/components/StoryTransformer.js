@@ -3,16 +3,34 @@ import PropTypes from 'prop-types';
 import styled from '@emotion/styled/macro';
 import css from '@emotion/css/macro';
 
+const initialState = {
+  xy: [0, 0],
+  swiping: false,
+  lastEventData: undefined,
+  start: undefined
+};
+
+const getDirection = (absX, absY, deltaX, deltaY) => {
+  if (absX > absY) {
+    if (deltaX > 0) {
+      return 'LEFT';
+    }
+    return 'RIGHT';
+  } else if (deltaY > 0) {
+    return 'UP';
+  }
+  return 'DOWN';
+};
+
 class StoryTransformer extends React.PureComponent {
   constructor(props) {
     super(props);
 
+    this.transientState = { ...initialState, type: 'class' };
     this.initialize();
     this.state = { index: this.index };
   }
 
-  componentDidMount() {}
-  componentDidUpdate() {}
   render() {
     const { index, processing } = this.state;
     return (
@@ -30,8 +48,16 @@ class StoryTransformer extends React.PureComponent {
 
   renderCard(type, idx) {
     const isClickable = type === 'current';
+    const props = isClickable
+      ? {
+          onTouchStart: this.handleTouchStart,
+          onTouchEnd: this.handleTouchEnd,
+          onTouchMove: this.handleTouchMove
+        }
+      : {};
+
     return (
-      <Card key={idx} processing={type}>
+      <Card {...props} key={idx} processing={type}>
         <CardMedia>
           {this.renderMedia(idx)}
           {isClickable && idx > 0 && (
@@ -91,7 +117,7 @@ class StoryTransformer extends React.PureComponent {
     }
 
     if (nextIdx < 0 || nextIdx + 1 > this.props.list.length) {
-      throw new Error('Out of the range');
+      throw new Error(`this index ${nextIdx} is out of the list.`);
     }
 
     this.index = nextIdx;
@@ -112,20 +138,89 @@ class StoryTransformer extends React.PureComponent {
     this.setState({ index: this.index, processing: null });
     this.props.onChanged(this.index);
   };
+
+  _setTransientState = callback =>
+    (this.transientState = callback(this.transientState, this.props));
+
+  handleTouchStart = event => {
+    if (event.touches && event.touches.length > 1) return;
+
+    this._setTransientState(state => {
+      const { clientX, clientY } = event.touches ? event.touches[0] : event;
+      return {
+        ...state,
+        ...initialState,
+        xy: [clientX, clientY],
+        start: event.timeStamp || 0
+      };
+    });
+  };
+  handleTouchMove = event => {
+    this._setTransientState((state, props) => {
+      if (
+        !state.xy[0] ||
+        !state.xy[1] ||
+        (event.touches && event.touches.length > 1)
+      ) {
+        return state;
+      }
+
+      const { clientX, clientY } = event.touches ? event.touches[0] : event;
+      const deltaX = state.xy[0] - clientX;
+      const deltaY = state.xy[1] - clientY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+      const time = (event.timeStamp || 0) - state.start;
+      const velocity = Math.sqrt(absX * absX + absY * absY) / (time || 1);
+
+      if (absX < props.delta && absY < props.delta && !state.swiping)
+        return state;
+
+      const dir = getDirection(absX, absY, deltaX, deltaY);
+      const eventData = { event, absX, absY, deltaX, deltaY, velocity, dir };
+
+      return { ...state, lastEventData: eventData, swiping: true };
+    });
+  };
+  handleTouchEnd = event => {
+    this._setTransientState((state, props) => {
+      if (state.swiping) {
+        const eventData = { ...state.lastEventData, event };
+
+        if (eventData.velocity > 0.5) {
+          try {
+            if (eventData.dir === 'RIGHT') {
+              this.goTo(-1);
+            } else if (eventData.dir === 'LEFT') {
+              this.goTo(1);
+            }
+          } catch (error) {
+            this.props.onError(error);
+          }
+        }
+      }
+
+      return { ...state, ...initialState };
+    });
+  };
 }
 
 StoryTransformer.propTypes = {
   list: PropTypes.arrayOf(PropTypes.string),
+  swipedDelta: PropTypes.number,
   renderMedia: PropTypes.func,
   renderCover: PropTypes.func,
-  onChanged: PropTypes.func
+  onChanged: PropTypes.func,
+  onError: PropTypes.func
 };
 
 StoryTransformer.defaultProps = {
   list: [],
+  swipedDelta: 10,
   renderMedia: () => null,
   renderCover: () => null,
-  onChanged: () => null
+  onChanged: () => null,
+  onError: () => null
 };
 
 const Scene = styled.div`
@@ -213,7 +308,11 @@ const ClickableLeft = styled(Clickable)`
   width: 25%;
 
   &:active {
-    background: linear-gradient(to right, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0) 75%);
+    background: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.25),
+      rgba(0, 0, 0, 0) 75%
+    );
   }
 `;
 const ClickableRight = styled(Clickable)`
