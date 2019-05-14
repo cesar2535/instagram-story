@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import styled from '@emotion/styled/macro';
+import css from '@emotion/css/macro';
 
 class StoryTransformer extends React.PureComponent {
   constructor(props) {
@@ -28,28 +29,18 @@ class StoryTransformer extends React.PureComponent {
   }
 
   renderCard(type, idx) {
-    const Wrapper =
-      type === 'previous'
-        ? PreviousCard
-        : type === 'next'
-        ? NextCard
-        : type === 'current'
-        ? CurrentCard
-        : null;
-
-    if (Wrapper == null) return null;
-
+    const isClickable = type === 'current'
     return (
-      <Wrapper key={idx}>
+      <Card key={idx} transform={type}>
         <CardMedia>
           {this.renderMedia(idx)}
-          {idx > 0 && <ClickableLeft onClick={() => this.goTo(-1)} />}
-          {idx + 1 < this.props.list.length && (
+          {isClickable && idx > 0 && <ClickableLeft onClick={() => this.goTo(-1)} />}
+          {isClickable && idx + 1 < this.props.list.length && (
             <ClickableRight onClick={() => this.goTo(1)} />
           )}
         </CardMedia>
         <CardCover>{this.renderCover(idx)}</CardCover>
-      </Wrapper>
+      </Card>
     );
   }
 
@@ -169,15 +160,23 @@ const Card = styled.div`
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
+
+  ${({ transform }) =>
+    transform === 'next'
+      ? next
+      : transform === 'previous'
+      ? previous
+      : current};
 `;
-const CurrentCard = styled(Card)`
+
+const current = css`
   transform: translateZ(50vw);
 `;
-const NextCard = styled(Card)`
+const next = css`
   transform: rotateY(90deg) translateX(50%);
   transform-origin: top right;
 `;
-const PreviousCard = styled(Card)`
+const previous = css`
   transform: rotateY(-90deg) translateX(-50%);
   transform-origin: center left;
 `;
