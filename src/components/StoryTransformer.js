@@ -81,13 +81,13 @@ class StoryTransformer extends React.PureComponent {
 
   renderMedia(idx) {
     const { list } = this.props;
-    const id = list.length > 0 ? list[idx] : this.props.id
+    const id = list.length > 0 ? list[idx] : this.props.id;
     return this.props.renderMedia(id, idx, list);
   }
 
   renderCover(idx) {
     const { list } = this.props;
-    const id = list.length > 0 ? list[idx] : this.props.id
+    const id = list.length > 0 ? list[idx] : this.props.id;
     return this.props.renderCover(id, idx, list);
   }
 
@@ -136,7 +136,11 @@ class StoryTransformer extends React.PureComponent {
     this.setState({ processing: this.processing });
   }
 
-  handleTransitionEnd = () => {
+  handleTransitionEnd = event => {
+    if (event.target !== event.currentTarget) {
+      return false;
+    }
+
     this.setState({ index: this.index, processing: null });
     this.props.onChanged(this.index);
   };
