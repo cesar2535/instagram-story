@@ -1,6 +1,5 @@
 import React from 'react';
 import { map, range } from 'ramda';
-import logo from './logo.svg';
 import './App.css';
 
 import StoryTransformer from '../components/StoryTransformer';
