@@ -3,24 +3,7 @@ import PropTypes from 'prop-types';
 import styled from '@emotion/styled/macro';
 import css from '@emotion/css/macro';
 
-const initialState = {
-  xy: [0, 0],
-  swiping: false,
-  lastEventData: undefined,
-  start: undefined
-};
-
-const getDirection = (absX, absY, deltaX, deltaY) => {
-  if (absX > absY) {
-    if (deltaX > 0) {
-      return 'LEFT';
-    }
-    return 'RIGHT';
-  } else if (deltaY > 0) {
-    return 'UP';
-  }
-  return 'DOWN';
-};
+import { getHandlers, initialState } from '../utils/getTouchHandlers';
 
 class StoryTransformer extends React.PureComponent {
   constructor(props) {
@@ -48,13 +31,7 @@ class StoryTransformer extends React.PureComponent {
 
   renderCard(type, idx) {
     const isClickable = type === 'current';
-    const props = isClickable
-      ? {
-          onTouchStart: this.handleTouchStart,
-          onTouchEnd: this.handleTouchEnd,
-          onTouchMove: this.handleTouchMove
-        }
-      : {};
+    const props = this.getCardProps(isClickable);
 
     return (
       <Card {...props} key={idx} processing={type}>
@@ -145,69 +122,37 @@ class StoryTransformer extends React.PureComponent {
     this.props.onChanged(this.index);
   };
 
-  _setTransientState = callback =>
-    (this.transientState = callback(this.transientState, this.props));
-
-  handleTouchStart = event => {
-    if (event.touches && event.touches.length > 1) return;
-
-    this._setTransientState(state => {
-      const { clientX, clientY } = event.touches ? event.touches[0] : event;
-      return {
-        ...state,
-        ...initialState,
-        xy: [clientX, clientY],
-        start: event.timeStamp || 0
-      };
+  _setTransientState = callback => {
+    this.transientState = callback(this.transientState, {
+      onSwiped: this.handleSwiped
     });
   };
-  handleTouchMove = event => {
-    this._setTransientState((state, props) => {
-      if (
-        !state.xy[0] ||
-        !state.xy[1] ||
-        (event.touches && event.touches.length > 1)
-      ) {
-        return state;
-      }
 
-      const { clientX, clientY } = event.touches ? event.touches[0] : event;
-      const deltaX = state.xy[0] - clientX;
-      const deltaY = state.xy[1] - clientY;
-      const absX = Math.abs(deltaX);
-      const absY = Math.abs(deltaY);
-      const time = (event.timeStamp || 0) - state.start;
-      const velocity = Math.sqrt(absX * absX + absY * absY) / (time || 1);
-
-      if (absX < props.delta && absY < props.delta && !state.swiping)
-        return state;
-
-      const dir = getDirection(absX, absY, deltaX, deltaY);
-      const eventData = { event, absX, absY, deltaX, deltaY, velocity, dir };
-
-      return { ...state, lastEventData: eventData, swiping: true };
-    });
-  };
-  handleTouchEnd = event => {
-    this._setTransientState((state, props) => {
-      if (state.swiping) {
-        const eventData = { ...state.lastEventData, event };
-
-        if (eventData.velocity > 0.5) {
-          try {
-            if (eventData.dir === 'RIGHT') {
-              this.goTo(-1);
-            } else if (eventData.dir === 'LEFT') {
-              this.goTo(1);
-            }
-          } catch (error) {
-            this.props.onError(error);
-          }
+  handleSwiped = event => {
+    if (event.velocity > 0.5) {
+      try {
+        if (event.dir === 'RIGHT') {
+          this.goTo(-1);
+        } else if (event.dir === 'LEFT') {
+          this.goTo(1);
         }
+      } catch (error) {
+        this.props.onError(error);
       }
+    }
+  };
 
-      return { ...state, ...initialState };
-    });
+  getCardProps = isClickable => {
+    if (!isClickable) {
+      return {};
+    }
+
+    const { onStart, onEnd, onMove } = getHandlers(this._setTransientState);
+    return {
+      onTouchStart: onStart,
+      onTouchEnd: onEnd,
+      onTouchMove: onMove
+    };
   };
 }
 
