@@ -1,17 +1,52 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import * as React from 'react';
 import styled from '@emotion/styled/macro';
 import css from '@emotion/css/macro';
 
-import { getHandlers, initialState } from '../utils/getTouchHandlers';
+import {
+  getHandlers,
+  initialState,
+  State as TouchState,
+  EventData
+} from '../utils/getTouchHandlers';
 
-class StoryTransformer extends React.PureComponent {
-  constructor(props) {
+type ProcessingType = 'next' | 'previous' | 'current' | null;
+
+type Props = {
+  id: string;
+  list: string[];
+  swipedDelta: number;
+  renderMedia: (id: string, idx: number, list: string[]) => React.ReactElement;
+  renderCover: (id: string, idx: number, list: string[]) => React.ReactElement;
+  onChanged: (index: number) => void;
+  onError: (err: Error) => void;
+};
+type State = {
+  index: number;
+  processing: ProcessingType;
+};
+
+class StoryTransformer extends React.PureComponent<Props, State> {
+  transientState: TouchState;
+  index: number;
+  processing?: ProcessingType;
+  id?: string | null;
+
+  static defaultProps = {
+    list: [],
+    swipedDelta: 10,
+    renderMedia: () => null,
+    renderCover: () => null,
+    onChanged: () => null,
+    onError: () => null
+  };
+
+  constructor(props: Props) {
     super(props);
 
     this.transientState = { ...initialState, type: 'class' };
+    this.index = -1;
     this.initialize();
-    this.state = { index: this.index };
+    this.state = { index: this.index, processing: null };
   }
 
   render() {
@@ -29,7 +64,7 @@ class StoryTransformer extends React.PureComponent {
     );
   }
 
-  renderCard(type, idx) {
+  renderCard(type: ProcessingType, idx: number) {
     const isClickable = type === 'current';
     const props = this.getCardProps(isClickable);
 
@@ -49,20 +84,20 @@ class StoryTransformer extends React.PureComponent {
     );
   }
 
-  renderTransitionCard(processing, idx) {
+  renderTransitionCard(processing: ProcessingType, idx: number) {
     if (processing == null) return null;
 
     const index = processing === 'previous' ? idx - 1 : idx + 1;
     return this.renderCard(processing, index);
   }
 
-  renderMedia(idx) {
+  renderMedia(idx: number) {
     const { list } = this.props;
     const id = list.length > 0 ? list[idx] : this.props.id;
     return this.props.renderMedia(id, idx, list);
   }
 
-  renderCover(idx) {
+  renderCover(idx: number) {
     const { list } = this.props;
     const id = list.length > 0 ? list[idx] : this.props.id;
     return this.props.renderCover(id, idx, list);
@@ -74,10 +109,12 @@ class StoryTransformer extends React.PureComponent {
 
     if (idx !== -1) {
       this.index = idx;
+    } else {
+      this.index = -1;
     }
   }
 
-  getIdByIndex(idx) {
+  getIdByIndex(idx: number | null) {
     if (idx == null) return null;
 
     const { list } = this.props;
@@ -113,7 +150,7 @@ class StoryTransformer extends React.PureComponent {
     this.setState({ processing: this.processing });
   }
 
-  handleTransitionEnd = event => {
+  handleTransitionEnd = (event: React.TransitionEvent) => {
     if (event.target !== event.currentTarget) {
       return false;
     }
@@ -122,13 +159,13 @@ class StoryTransformer extends React.PureComponent {
     this.props.onChanged(this.index);
   };
 
-  _setTransientState = callback => {
+  _setTransientState = (callback: Function) => {
     this.transientState = callback(this.transientState, {
       onSwiped: this.handleSwiped
     });
   };
 
-  handleSwiped = event => {
+  handleSwiped = (event: EventData) => {
     if (event.velocity > 0.5) {
       try {
         if (event.dir === 'RIGHT') {
@@ -142,7 +179,7 @@ class StoryTransformer extends React.PureComponent {
     }
   };
 
-  getCardProps = isClickable => {
+  getCardProps = (isClickable: boolean) => {
     if (!isClickable) {
       return {};
     }
@@ -156,24 +193,6 @@ class StoryTransformer extends React.PureComponent {
   };
 }
 
-StoryTransformer.propTypes = {
-  list: PropTypes.arrayOf(PropTypes.string),
-  swipedDelta: PropTypes.number,
-  renderMedia: PropTypes.func,
-  renderCover: PropTypes.func,
-  onChanged: PropTypes.func,
-  onError: PropTypes.func
-};
-
-StoryTransformer.defaultProps = {
-  list: [],
-  swipedDelta: 10,
-  renderMedia: () => null,
-  renderCover: () => null,
-  onChanged: () => null,
-  onError: () => null
-};
-
 const Scene = styled.div`
   width: 100%;
   height: 100%;
@@ -181,7 +200,11 @@ const Scene = styled.div`
   perspective-origin: 50% 50%;
 `;
 
-const Container = styled.div`
+type ContainerProps = {
+  processing: ProcessingType;
+};
+
+const Container = styled.div<ContainerProps>`
   position: relative;
   height: 100%;
   transform-style: preserve-3d;
@@ -201,7 +224,11 @@ const Container = styled.div`
       : 'transform: translateZ(-50vw)'};
 `;
 
-const Card = styled.div`
+type CardProps = {
+  processing: ProcessingType;
+};
+
+const Card = styled.div<CardProps>`
   position: absolute;
   top: 0;
   bottom: 0;

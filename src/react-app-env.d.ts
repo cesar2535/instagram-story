@@ -35,14 +35,16 @@ declare module '*.png' {
 }
 
 declare module '*.webp' {
-    const src: string;
-    export default src;
+  const src: string;
+  export default src;
 }
 
 declare module '*.svg' {
   import * as React from 'react';
 
-  export const ReactComponent: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
+  export const ReactComponent: React.FunctionComponent<
+    React.SVGProps<SVGSVGElement>
+  >;
 
   const src: string;
   export default src;
@@ -61,4 +63,16 @@ declare module '*.module.scss' {
 declare module '*.module.sass' {
   const classes: { [key: string]: string };
   export default classes;
+}
+
+declare module '@emotion/styled/macro' {
+  import styled from '@emotion/styled';
+  export * from '@emotion/styled';
+  export default styled;
+}
+
+declare module '@emotion/css/macro' {
+  import css from '@emotion/css';
+  export * from '@emotion/css';
+  export default css;
 }
