@@ -1,28 +1,64 @@
-export const LEFT = 'LEFT';
-export const RIGHT = 'RIGHT';
-export const UP = 'UP';
-export const DOWN = 'DOWN';
+import * as React from 'react';
 
-export const initialState = {
+export enum Direction {
+  Left = 'LEFT',
+  Right = 'RIGHT',
+  Up = 'UP',
+  Down = 'DOWN'
+}
+
+export type EventData = {
+  dir: Direction;
+  event: HandlerEvent;
+  absX: number;
+  absY: number;
+  deltaX: number;
+  deltaY: number;
+  velocity: number;
+};
+
+type XY = [number, number];
+
+export type State = {
+  type?: string;
+  xy: XY;
+  swiping: boolean;
+  lastEventData?: EventData;
+  start?: number;
+};
+
+type SetStateFn = (cb: (state: State, props: any) => State) => void;
+type HandlerEvent = React.TouchEvent | React.MouseEvent;
+
+function isTouchEvent(event: HandlerEvent): event is React.TouchEvent {
+  return event.nativeEvent instanceof TouchEvent;
+}
+
+export const initialState: State = {
   xy: [0, 0],
   swiping: false,
   lastEventData: undefined,
   start: undefined
 };
 
-function getDirection(absX, absY, deltaX, deltaY) {
+function getDirection(
+  absX: number,
+  absY: number,
+  deltaX: number,
+  deltaY: number
+): Direction {
   if (absX > absY) {
     if (deltaX > 0) {
-      return LEFT;
+      return Direction.Left;
     }
-    return RIGHT;
+    return Direction.Right;
   } else if (deltaY > 0) {
-    return UP;
+    return Direction.Up;
   }
-  return DOWN;
+  return Direction.Down;
 }
 
-function rotateXYByAngle(pos, angle = 0) {
+function rotateXYByAngle(pos: XY, angle: number = 0): XY {
   if (angle === 0) return pos;
   const angleInRadians = (Math.PI / 180) * angle;
   const x =
@@ -32,35 +68,40 @@ function rotateXYByAngle(pos, angle = 0) {
   return [x, y];
 }
 
-export function getHandlers(set, handlerProps) {
-  const onStart = event => {
+export function getHandlers(set: SetStateFn, handlerProps?: any) {
+  const onStart = (event: HandlerEvent) => {
     // if more than a single touch don't track, for now...
-    if (event.touches && event.touches.length > 1) return;
+    if (isTouchEvent(event) && event.touches.length > 1) return;
 
     set((state, props) => {
-      const { clientX, clientY } = event.touches ? event.touches[0] : event;
+      const { clientX, clientY } = isTouchEvent(event)
+        ? event.touches[0]
+        : event;
       const xy = rotateXYByAngle([clientX, clientY], props.rotationAngle);
       return { ...state, ...initialState, xy, start: event.timeStamp || 0 };
     });
   };
 
-  const onMove = event => {
+  const onMove = (event: HandlerEvent) => {
     set((state, props) => {
       if (
         !state.xy[0] ||
         !state.xy[1] ||
-        (event.touches && event.touches.length > 1)
+        (isTouchEvent(event) && event.touches.length > 1)
       ) {
         return state;
       }
 
-      const { clientX, clientY } = event.touches ? event.touches[0] : event;
+      const { clientX, clientY } = isTouchEvent(event)
+        ? event.touches[0]
+        : event;
       const [x, y] = rotateXYByAngle([clientX, clientY], props.rotationAngle);
       const deltaX = state.xy[0] - x;
       const deltaY = state.xy[1] - y;
       const absX = Math.abs(deltaX);
       const absY = Math.abs(deltaY);
-      const time = (event.timeStamp || 0) - state.start;
+      const start = typeof state.start === 'number' ? state.start : 0;
+      const time = (event.timeStamp || 0) - start;
       const velocity = Math.sqrt(absX * absX + absY * absY) / (time || 1);
 
       // if swipe is under delta and we have not started to track a swipe: skip update
@@ -91,10 +132,10 @@ export function getHandlers(set, handlerProps) {
     });
   };
 
-  const onEnd = event => {
+  const onEnd = (event: HandlerEvent) => {
     set((state, props) => {
       if (state.swiping) {
-        const eventData = { ...state.lastEventData, event };
+        const eventData = { ...state.lastEventData, event } as EventData;
         props.onSwiped && props.onSwiped(eventData);
 
         props[`onSwiped${eventData.dir}`] &&
@@ -106,7 +147,7 @@ export function getHandlers(set, handlerProps) {
 
   const cleanUpMouse = () => {};
 
-  const onUp = e => {
+  const onUp = (e: HandlerEvent) => {
     cleanUpMouse();
     onEnd(e);
   };
