@@ -1,15 +1,8 @@
 import * as React from 'react';
-import { map, range } from 'ramda';
 import './App.css';
 
 import StoryTransformer from '../components/StoryTransformer';
 
-const genCharList = (charA: string, charB: string) => {
-  const start = charA.charCodeAt(0);
-  const end = charB.charCodeAt(0) + 1;
-  return map(code => String.fromCharCode(code), range(start, end));
-};
-const LIST: string[] = genCharList('a', 'z');
 const VIDEO_LIST: string[] = [
   'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
   'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
