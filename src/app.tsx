@@ -21,7 +21,7 @@ function App() {
   return (
     <div className="app">
       <div className="app__header">
-        <Transformer />
+        <Transformer id="video" swipedDelta={10} />
       </div>
     </div>
   );
