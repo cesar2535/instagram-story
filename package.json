@@ -3,14 +3,6 @@
   "version": "0.1.0",
   "homepage": "https://cesar2535.github.io/instagram-story",
   "private": true,
-  "dependencies": {
-    "@emotion/core": "^10.0.10",
-    "@emotion/css": "^10.0.9",
-    "@emotion/styled": "^10.0.11",
-    "ramda": "^0.27.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -30,10 +22,13 @@
       "last 1 safari version"
     ]
   },
+  "dependencies": {
+    "clsx": "^2.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
   "devDependencies": {
-    "@types/jest": "^26.0.23",
     "@types/node": "^20.11.30",
-    "@types/ramda": "^0.27.40",
     "@types/react": "^18.2.67",
     "@types/react-dom": "^18.2.22",
     "@typescript-eslint/eslint-plugin": "^7.3.1",
